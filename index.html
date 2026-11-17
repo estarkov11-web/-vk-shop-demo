@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VK Mini App Shop</title>
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#1c1c1e] text-white font-sans">
+    <!-- Background pattern -->
+    <div class="fixed inset-0 z-0 opacity-5 pointer-events-none overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full" style="background-image: radial-gradient(#3b82f6 1px, transparent 1px); background-size: 30px 30px;"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-40 bg-[#1c1c1e]/95 backdrop-blur-sm border-b border-white/10 shadow-lg">
+        <div class="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <i class="fa-solid fa-store text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold">Магазин</h1>
+                    <p class="text-xs text-gray-400">Оригинальные товары</p>
+                </div>
+            </div>
+            <button id="cartButton" class="relative p-2 rounded-full hover:bg-white/10 transition-colors">
+                <i class="fa-solid fa-cart-shopping text-xl"></i>
+                <span id="cartCount" class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full opacity-0 transition-opacity duration-300">0</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-md mx-auto px-4 py-6 relative z-10">
+        <h2 class="text-xl font-bold mb-6 text-gradient">Каталог товаров</h2>
+
+        <!-- Product Grid -->
+        <div id="productGrid" class="grid grid-cols-2 gap-4">
+            <!-- Товары будут добавлены через JS -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center">
+            <i class="fa-solid fa-warehouse text-6xl text-gray-600 mb-4"></i>
+            <p class="text-gray-400">Каталог пуст</p>
+        </div>
+    </main>
+
+    <!-- Floating Cart Panel -->
+    <div id="cartPanel" class="fixed bottom-0 left-0 right-0 z-50 transform translate-y-full transition-transform duration-300 ease-in-out">
+        <div class="bg-[#252527] border-t border-white/10 shadow-2xl">
+            <div class="max-w-md mx-auto px-4 py-4">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <p class="text-sm text-gray-400">Итого:</p>
+                        <p class="text-2xl font-bold text-blue-400"><span id="totalPrice">0</span> ₽</p>
+                    </div>
+                    <div class="text-center">
+                        <span id="cartItemCount" class="text-sm text-gray-400">Товаров: <span class="text-white font-semibold" id="cartCountPanel">0</span></span>
+                    </div>
+                </div>
+                <button id="checkoutButton" class="w-full bg-blue-500 hover:bg-blue-600 active:scale-95 text-white py-3 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all duration-200 transform hidden">
+                    Оформить заказ на <span id="checkoutAmount">0</span> ₽
+                </button>
+                <button id="emptyCartButton" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-xl text-sm font-medium transition-colors duration-200 mt-2 hidden">
+                    Очистить корзину
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm pointer-events-none"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
