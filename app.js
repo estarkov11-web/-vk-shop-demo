@@ -150,7 +150,10 @@ function getBadgeColor(badge) {
 
 // Отображение каталога
 function renderProducts() {
-    productGrid.innerHTML = products.map(product => createProductCard(product)).join('');
+    productGrid.innerHTML = '';
+    products.forEach(product => {
+        productGrid.appendChild(createProductCard(product));
+    });
 }
 
 // Добавление товара в корзину
