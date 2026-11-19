@@ -112,29 +112,31 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
-// Создание карточки товара
+// Создание карточки товара (возвращает HTML-строку для чистой вставки)
 function createProductCard(product) {
-    const card = document.createElement('div');
-    card.className = 'product-card';
-    card.innerHTML = `
-        <div class="product-image-container">
-            <img src="${product.image}" alt="${product.name}" class="product-image">
-            ${product.badge ? `<div class="product-badge" style="background: ${getBadgeColor(product.badge)}">${product.badge}</div>` : ''}
-        </div>
-        <div class="product-info">
-            <h3 class="product-title">${product.name}</h3>
-            <p class="product-description">${product.description}</p>
-            <div class="product-footer">
-                <div class="product-price">${product.price.toLocaleString('ru-RU')} ₽</div>
-                <div class="product-actions">
-                    <button class="btn-add" onclick="addToCart(${product.id})">
-                        <i class="fa-solid fa-plus"></i> В корзину
-                    </button>
+    const badgeHtml = product.badge ?
+        `<div class="product-badge" style="background: ${getBadgeColor(product.badge)}">${product.badge}</div>` : '';
+
+    return `
+        <div class="product-card" data-id="${product.id}">
+            <div class="product-image-container">
+                <img src="${product.image}" alt="${product.name}" class="product-image" loading="lazy">
+                ${badgeHtml}
+            </div>
+            <div class="product-info">
+                <h3 class="product-title">${product.name}</h3>
+                <p class="product-description">${product.description}</p>
+                <div class="product-footer">
+                    <div class="product-price">${product.price.toLocaleString('ru-RU')} ₽</div>
+                    <div class="product-actions">
+                        <button class="btn-add" data-id="${product.id}">
+                            <i class="fa-solid fa-plus"></i> В корзину
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     `;
-    return card;
 }
 
 // Цвета для бейджей
@@ -150,9 +152,21 @@ function getBadgeColor(badge) {
 
 // Отображение каталога
 function renderProducts() {
-    productGrid.innerHTML = '';
-    products.forEach(product => {
-        productGrid.appendChild(createProductCard(product));
+    if (products.length === 0) {
+        document.getElementById('emptyState').classList.remove('hidden');
+        return;
+    }
+
+    // Используем innerHTML для вставки всех карточек сразу
+    productGrid.innerHTML = products.map(product => createProductCard(product)).join('');
+
+    // Привязываем обработчики событий к кнопкам
+    productGrid.querySelectorAll('.btn-add').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const productId = parseInt(btn.getAttribute('data-id'));
+            addToCart(productId);
+        });
     });
 }
 
@@ -172,11 +186,7 @@ function addToCart(productId) {
     }
 
     updateCartUI();
-
-    // Показать карусель с товарами
-    if (window.vkBridge) {
-        vkBridge.send('VKWebAppStorageSet', { key: 'cart', value: JSON.stringify(cart) });
-    }
+    saveCart();
 }
 
 // Удаление товара из корзины
@@ -234,7 +244,7 @@ function updateCartUI() {
 
     // Обновление кнопок в карточках
     document.querySelectorAll('.btn-add').forEach(btn => {
-        const productId = parseInt(btn.getAttribute('onclick').match(/\d+/)[0]);
+        const productId = parseInt(btn.getAttribute('data-id'));
         const inCart = cart.find(item => item.id === productId);
         if (inCart) {
             btn.innerHTML = `<i class="fa-solid fa-check"></i> В корзине`;
@@ -325,6 +335,15 @@ function getVKParams() {
     return result;
 }
 
+// Сохранение корзины в хранилище
+function saveCart() {
+    try {
+        localStorage.setItem('cart', JSON.stringify(cart));
+    } catch (e) {
+        console.error('Ошибка сохранения корзины:', e);
+    }
+}
+
 // Очистка корзины
 function clearCart() {
     if (cart.length === 0) return;
@@ -332,23 +351,21 @@ function clearCart() {
     if (confirm('Очистить корзину?')) {
         cart = [];
         updateCartUI();
+        saveCart();
         showToast('Корзина очищена', 'info');
     }
 }
 
 // Загрузка корзины из хранилища
 function loadCart() {
-    if (window.vkBridge) {
-        vkBridge.send('VKWebAppStorageGet', { keys: ['cart'] }, (data) => {
-            if (data.results && data.results[0]) {
-                try {
-                    cart = JSON.parse(data.results[0]);
-                    updateCartUI();
-                } catch (e) {
-                    console.error('Ошибка загрузки корзины:', e);
-                }
-            }
-        });
+    try {
+        const savedCart = localStorage.getItem('cart');
+        if (savedCart) {
+            cart = JSON.parse(savedCart);
+            updateCartUI();
+        }
+    } catch (e) {
+        console.error('Ошибка загрузки корзины:', e);
     }
 }
 
@@ -363,7 +380,7 @@ function init() {
     // Инициализация VK Bridge
     initVKBridge();
 
-    // Обработчики событий
+    // Обработчики событий для корзины
     cartButton.addEventListener('click', () => {
         if (cart.length > 0) {
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
