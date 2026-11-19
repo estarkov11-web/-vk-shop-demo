@@ -1,112 +1,103 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VK Mini App Shop</title>
-    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Store - VK Mini App</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+    </style>
 </head>
-<body class="bg-[#1c1c1e] text-white font-sans">
-    <!-- Background pattern -->
-    <div class="fixed inset-0 z-0 opacity-5 pointer-events-none overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-full" style="background-image: radial-gradient(#3b82f6 1px, transparent 1px); background-size: 30px 30px;"></div>
-    </div>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans">
 
-    <!-- Header -->
-    <header class="sticky top-0 z-40 bg-[#1c1c1e]/95 backdrop-blur-sm border-b border-white/10 shadow-lg">
-        <div class="max-w-md mx-auto px-4 py-4 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
-                    <i class="fa-solid fa-store text-xl"></i>
+    <!-- Fixed Header -->
+    <header class="fixed top-0 left-0 right-0 z-40 bg-gray-800 border-b border-gray-700 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <h1 class="text-xl font-bold text-white">Modern Store</h1>
                 </div>
-                <div>
-                    <h1 class="text-lg font-bold">Магазин</h1>
-                    <p class="text-xs text-gray-400">Оригинальные товары</p>
-                </div>
+                <button id="cart-trigger" class="relative p-2 text-gray-300 hover:text-white transition-colors rounded-lg hover:bg-gray-700">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                    </svg>
+                    <span id="cart-badge" class="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full opacity-0 transition-opacity duration-200">
+                        0
+                    </span>
+                </button>
             </div>
-            <button id="cartButton" class="relative p-2 rounded-full hover:bg-white/10 transition-colors active:scale-95">
-                <i class="fa-solid fa-cart-shopping text-xl"></i>
-                <span id="cartCount" class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full opacity-0 transition-opacity duration-300">0</span>
-            </button>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-md mx-auto px-4 py-6 relative z-10 pb-24">
-        <h2 class="text-xl font-bold mb-6 text-gradient">Каталог товаров</h2>
-
-        <!-- Product Grid -->
-        <div id="productGrid" class="grid grid-cols-2 gap-4">
-            <!-- Товары будут добавлены через JS -->
+    <main class="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="mb-8">
+            <h2 class="text-3xl font-bold text-white">Featured Products</h2>
+            <p class="text-gray-400 mt-2">Hand-picked items just for you</p>
         </div>
 
-        <!-- Empty State -->
-        <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center">
-            <i class="fa-solid fa-warehouse text-6xl text-gray-600 mb-4"></i>
-            <p class="text-gray-400">Каталог пуст</p>
+        <!-- Product Grid -->
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Products will be rendered here -->
         </div>
     </main>
 
-    <!-- Floating Cart Button -->
-    <button id="cartFloatingButton" class="fixed bottom-6 right-6 z-50 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg shadow-blue-500/40 transition-all duration-300 transform hover:scale-110 active:scale-95">
-        <i class="fa-solid fa-cart-shopping text-2xl"></i>
-        <span id="cartCountFloating" class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full opacity-0 transition-opacity duration-300">0</span>
-    </button>
+    <!-- Shopping Cart Modal Overlay -->
+    <div id="cart-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <!-- Backdrop -->
+        <div id="modal-backdrop" class="fixed inset-0 bg-black bg-opacity-75 transition-opacity backdrop-blur-sm"></div>
 
-    <!-- Cart Modal Overlay -->
-    <div id="cartModalOverlay" class="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none">
-        <div class="absolute inset-x-0 bottom-0 max-w-md mx-auto bg-[#252527] rounded-t-3xl shadow-2xl transform transition-transform duration-300 translate-y-full" id="cartModal">
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
-                <h3 class="text-xl font-bold text-white">Корзина</h3>
-                <button id="closeCartModal" class="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors active:scale-95">
-                    <i class="fa-solid fa-times text-xl"></i>
-                </button>
-            </div>
+        <!-- Modal Panel -->
+        <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+            <div id="modal-panel" class="relative transform overflow-hidden rounded-2xl bg-gray-800 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-2xl border border-gray-700">
 
-            <!-- Cart Items List -->
-            <div id="cartItemsList" class="p-6 max-h-[60vh] overflow-y-auto space-y-4">
-                <div class="text-center text-gray-500 py-8">
-                    <i class="fa-solid fa-cart-shopping text-4xl mb-4 opacity-30"></i>
-                    <p>Корзина пуста</p>
+                <!-- Header -->
+                <div class="bg-gray-700 px-4 py-6 sm:px-6 flex justify-between items-center">
+                    <h3 class="text-xl font-bold text-white" id="modal-title">Shopping Cart</h3>
+                    <button id="close-cart" class="text-gray-400 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
                 </div>
-            </div>
 
-            <!-- Cart Footer -->
-            <div class="border-t border-white/10 p-6 bg-[#252527]">
-                <!-- Order Summary -->
-                <div id="cartSummary" class="hidden space-y-3 mb-4">
-                    <div class="flex justify-between items-center text-gray-400">
-                        <span>Итого:</span>
-                        <span id="modalTotalQty">0 шт.</span>
-                    </div>
-                    <div class="flex justify-between items-center text-2xl font-bold text-blue-400">
-                        <span>Сумма:</span>
-                        <span id="modalTotalPrice">0 ₽</span>
+                <!-- Cart Items -->
+                <div id="cart-items-container" class="px-4 py-6 sm:px-6 max-h-[60vh] overflow-y-auto">
+                    <!-- Cart items will be rendered here -->
+                    <div class="text-center py-12 text-gray-400">
+                        <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                        </svg>
+                        <p>Your cart is empty</p>
                     </div>
                 </div>
 
-                <div class="space-y-3">
-                    <button id="checkoutButton" class="w-full bg-blue-500 hover:bg-blue-600 active:scale-95 text-white py-3.5 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all duration-200 hidden">
-                        Оформить заказ на <span id="checkoutAmount">0</span> ₽
-                    </button>
-                    <button id="emptyCartButton" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-xl font-medium transition-colors duration-200 hidden">
-                        Очистить корзину
-                    </button>
-                    <button id="continueShoppingButton" class="w-full bg-transparent border border-white/20 hover:bg-white/5 text-white py-3 rounded-xl font-medium transition-colors duration-200">
-                        Продолжить покупки
-                    </button>
+                <!-- Footer -->
+                <div class="bg-gray-700 px-4 py-4 sm:px-6 border-t border-gray-600">
+                    <div class="flex justify-between items-center mb-4">
+                        <span class="text-lg font-semibold text-white">Total:</span>
+                        <span id="cart-total" class="text-2xl font-bold text-green-400">$0.00</span>
+                    </div>
+                    <div class="flex gap-3">
+                        <button id="checkout-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-xl transition-colors shadow-lg hover:shadow-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed">
+                            Checkout
+                        </button>
+                        <button id="close-modal-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-xl transition-colors">
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notifications -->
-    <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[70] w-full max-w-sm pointer-events-none"></div>
-
-    <script src="app.js" defer></script>
+    <script src="app.js"></script>
 </body>
 </html>
