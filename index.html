@@ -35,18 +35,13 @@
     </header>
 
     <!-- Main Content -->
-    <main class="max-w-md mx-auto px-4 py-6 relative z-10">
+    <main class="max-w-md mx-auto px-4 py-6 relative z-10 pb-24">
         <h2 class="text-xl font-bold mb-6 text-gradient">Каталог товаров</h2>
 
         <!-- Product Grid -->
         <div id="productGrid" class="grid grid-cols-2 gap-4">
             <!-- Товары будут добавлены через JS -->
         </div>
-
-        <!-- Test Button -->
-        <button id="testRender" class="w-full bg-gray-500 hover:bg-gray-600 text-white py-3 rounded-xl mt-4 text-sm">
-            [ТЕСТ] Перерисовать товары
-        </button>
 
         <!-- Empty State -->
         <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center">
@@ -55,31 +50,63 @@
         </div>
     </main>
 
-    <!-- Floating Cart Panel -->
-    <div id="cartPanel" class="fixed bottom-0 left-0 right-0 z-50 transform translate-y-full transition-transform duration-300 ease-in-out">
-        <div class="bg-[#252527] border-t border-white/10 shadow-2xl">
-            <div class="max-w-md mx-auto px-4 py-4">
-                <div class="flex justify-between items-center mb-4">
-                    <div>
-                        <p class="text-sm text-gray-400">Итого:</p>
-                        <p class="text-2xl font-bold text-blue-400"><span id="totalPrice">0</span> ₽</p>
+    <!-- Floating Cart Button -->
+    <button id="cartFloatingButton" class="fixed bottom-6 right-6 z-40 bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-full shadow-lg shadow-blue-500/40 transition-all duration-300 transform hover:scale-110 active:scale-95">
+        <i class="fa-solid fa-cart-shopping text-2xl"></i>
+        <span id="cartCountFloating" class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full opacity-0 transition-opacity duration-300">0</span>
+    </button>
+
+    <!-- Cart Modal Overlay -->
+    <div id="cartModalOverlay" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 opacity-0 pointer-events-none">
+        <div class="absolute inset-x-0 bottom-0 max-w-md mx-auto bg-[#252527] rounded-t-3xl shadow-2xl transform transition-transform duration-300 translate-y-full" id="cartModal">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-6 py-4 border-b border-white/10">
+                <h3 class="text-xl font-bold text-white">Корзина</h3>
+                <button id="closeCartModal" class="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors">
+                    <i class="fa-solid fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Cart Items List -->
+            <div id="cartItemsList" class="p-6 max-h-[60vh] overflow-y-auto space-y-4">
+                <!-- Товары в корзине будут добавлены через JS -->
+                <div class="text-center text-gray-500 py-8">
+                    <i class="fa-solid fa-cart-shopping text-4xl mb-4 opacity-30"></i>
+                    <p>Корзина пуста</p>
+                </div>
+            </div>
+
+            <!-- Cart Footer -->
+            <div class="border-t border-white/10 p-6 bg-[#252527]">
+                <!-- Order Summary -->
+                <div id="cartSummary" class="hidden space-y-3 mb-4">
+                    <div class="flex justify-between items-center text-gray-400">
+                        <span>Итого:</span>
+                        <span id="modalTotalQty">0 шт.</span>
                     </div>
-                    <div class="text-center">
-                        <span id="cartItemCount" class="text-sm text-gray-400">Товаров: <span class="text-white font-semibold" id="cartCountPanel">0</span></span>
+                    <div class="flex justify-between items-center text-2xl font-bold text-blue-400">
+                        <span>Сумма:</span>
+                        <span id="modalTotalPrice">0 ₽</span>
                     </div>
                 </div>
-                <button id="checkoutButton" class="w-full bg-blue-500 hover:bg-blue-600 active:scale-95 text-white py-3 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all duration-200 transform hidden">
-                    Оформить заказ на <span id="checkoutAmount">0</span> ₽
-                </button>
-                <button id="emptyCartButton" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-xl text-sm font-medium transition-colors duration-200 mt-2 hidden">
-                    Очистить корзину
-                </button>
+
+                <div class="space-y-3">
+                    <button id="checkoutButton" class="w-full bg-blue-500 hover:bg-blue-600 active:scale-95 text-white py-3.5 rounded-xl font-semibold shadow-lg shadow-blue-500/30 transition-all duration-200 hidden">
+                        Оформить заказ на <span id="checkoutAmount">0</span> ₽
+                    </button>
+                    <button id="emptyCartButton" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-3 rounded-xl font-medium transition-colors duration-200 hidden">
+                        Очистить корзину
+                    </button>
+                    <button id="continueShoppingButton" class="w-full bg-transparent border border-white/20 hover:bg-white/5 text-white py-3 rounded-xl font-medium transition-colors duration-200">
+                        Продолжить покупки
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Toast Notifications -->
-    <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm pointer-events-none"></div>
+    <div id="toastContainer" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-sm pointer-events-none"></div>
 
     <script src="app.js"></script>
 </body>
