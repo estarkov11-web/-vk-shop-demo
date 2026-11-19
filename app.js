@@ -7,38 +7,38 @@
 const products = [
     {
         id: 1,
-        title: "Wireless Headphones",
-        price: 79.99,
+        title: "Беспроводные наушники",
+        price: 7999,
         image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80"
     },
     {
         id: 2,
-        title: "Smart Watch Pro",
-        price: 199.99,
+        title: "Смарт-часы Pro",
+        price: 19999,
         image: "https://images.unsplash.com/photo-1523275335684-37898b6a5e53?w=400&q=80"
     },
     {
         id: 3,
-        title: "Vintage Camera",
-        price: 459.99,
+        title: "Винтажная камера",
+        price: 45999,
         image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&q=80"
     },
     {
         id: 4,
-        title: "Designer Sunglasses",
-        price: 129.99,
+        title: "Дизайнерские солнцезащитные очки",
+        price: 12999,
         image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&q=80"
     },
     {
         id: 5,
-        title: "Mechanical Keyboard",
-        price: 149.99,
+        title: "Механическая клавиатура",
+        price: 14999,
         image: "https://images.unsplash.com/photo-1587829741301-dc798b91a607?w=400&q=80"
     },
     {
         id: 6,
-        title: "Premium Backpack",
-        price: 89.99,
+        title: "Премиальный рюкзак",
+        price: 8999,
         image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80"
     }
 ];
@@ -58,6 +58,18 @@ const cartTotal = document.getElementById('cart-total');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const checkoutBtn = document.getElementById('checkout-btn');
 const closeCartBtn = document.getElementById('close-cart');
+
+/**
+ * Форматирование цены в рубли
+ */
+function formatPrice(rubles) {
+    return new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: 'RUB',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(rubles);
+}
 
 /**
  * Renders the product catalog to the grid
@@ -93,21 +105,46 @@ function renderProducts() {
 
         const price = document.createElement('p');
         price.className = 'text-green-400 text-xl font-bold mb-4';
-        price.textContent = `$${product.price.toFixed(2)}`;
+        price.textContent = formatPrice(product.price);
 
+        // Quantity counter container (initially hidden)
+        const counterContainer = document.createElement('div');
+        counterContainer.className = 'hidden flex items-center justify-center gap-2 bg-gray-700 rounded-xl p-2';
+        counterContainer.id = `counter-${product.id}`;
+
+        const minusBtn = document.createElement('button');
+        minusBtn.className = 'w-8 h-8 flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+        minusBtn.innerHTML = '&minus;';
+        minusBtn.onclick = () => updateQuantity(product.id, product.quantity - 1);
+
+        const quantitySpan = document.createElement('span');
+        quantitySpan.className = 'text-white font-semibold w-6 text-center text-lg';
+        quantitySpan.textContent = '0';
+
+        const plusBtn = document.createElement('button');
+        plusBtn.className = 'w-8 h-8 flex items-center justify-center bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors';
+        plusBtn.innerHTML = '+';
+        plusBtn.onclick = () => updateQuantity(product.id, product.quantity + 1);
+
+        counterContainer.appendChild(minusBtn);
+        counterContainer.appendChild(quantitySpan);
+        counterContainer.appendChild(plusBtn);
+
+        // Add to cart button (initially visible)
         const addButton = document.createElement('button');
-        addButton.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl transition-colors shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2';
+        addButton.className = 'w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2';
         addButton.innerHTML = `
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
-            Add to Cart
+            В корзину
         `;
+        addButton.id = `add-btn-${product.id}`;
+        addButton.onclick = () => addToCart(product);
 
-        // Add to cart event
-        addButton.addEventListener('click', () => addToCart(product));
         content.appendChild(title);
         content.appendChild(price);
+        content.appendChild(counterContainer);
         content.appendChild(addButton);
 
         card.appendChild(imageContainer);
@@ -132,8 +169,32 @@ function addToCart(product) {
         });
     }
 
+    updateCounterUI(product.id, 1);
     updateCartUI();
     openCart();
+}
+
+/**
+ * Updates the quantity UI for a product button
+ */
+function updateCounterUI(productId, newQuantity) {
+    const counterContainer = document.getElementById(`counter-${productId}`);
+    const addButton = document.getElementById(`add-btn-${productId}`);
+    const quantitySpan = counterContainer.querySelector('span');
+    const minusBtn = counterContainer.querySelector('button:first-of-type');
+
+    if (newQuantity > 0) {
+        // Show counter, hide button
+        counterContainer.classList.remove('hidden');
+        addButton.classList.add('hidden');
+        quantitySpan.textContent = newQuantity;
+        minusBtn.disabled = newQuantity <= 1;
+    } else {
+        // Hide counter, show button
+        counterContainer.classList.add('hidden');
+        addButton.classList.remove('hidden');
+        quantitySpan.textContent = '0';
+    }
 }
 
 /**
@@ -152,15 +213,15 @@ function updateCartUI() {
 
     // Calculate total price
     const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    cartTotal.textContent = `$${totalPrice.toFixed(2)}`;
+    cartTotal.textContent = formatPrice(totalPrice);
 
     // Enable/disable checkout button
     if (cart.length === 0) {
         checkoutBtn.disabled = true;
-        checkoutBtn.textContent = 'Empty Cart';
+        checkoutBtn.textContent = 'Корзина пуста';
     } else {
         checkoutBtn.disabled = false;
-        checkoutBtn.textContent = 'Checkout';
+        checkoutBtn.textContent = 'Оформить заказ';
     }
 }
 
@@ -177,7 +238,7 @@ function renderCartItems() {
             <svg class="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
             </svg>
-            <p>Your cart is empty</p>
+            <p>Корзина пуста</p>
         `;
         cartItemsContainer.appendChild(emptyState);
         return;
@@ -186,7 +247,7 @@ function renderCartItems() {
     cart.forEach(product => {
         // Item container
         const itemContainer = document.createElement('div');
-        itemContainer.className = 'flex items-center gap-4 p-4 bg-gray-700/50 rounded-xl mb-3 animate-fade-in';
+        itemContainer.className = 'flex items-center gap-4 p-4 bg-gray-700/50 rounded-xl mb-3';
 
         // Product image
         const imgContainer = document.createElement('div');
@@ -209,7 +270,7 @@ function renderCartItems() {
 
         const price = document.createElement('p');
         price.className = 'text-green-400 font-semibold';
-        price.textContent = `$${product.price.toFixed(2)}`;
+        price.textContent = formatPrice(product.price);
 
         details.appendChild(name);
         details.appendChild(price);
@@ -243,11 +304,11 @@ function renderCartItems() {
 
         const itemTotalLabel = document.createElement('p');
         itemTotalLabel.className = 'text-xs text-gray-400';
-        itemTotalLabel.textContent = 'Total';
+        itemTotalLabel.textContent = 'Итого';
 
         const itemTotalPrice = document.createElement('p');
         itemTotalPrice.className = 'text-white font-bold';
-        itemTotalPrice.textContent = `$${(product.price * product.quantity).toFixed(2)}`;
+        itemTotalPrice.textContent = formatPrice(product.price * product.quantity);
 
         itemTotal.appendChild(itemTotalLabel);
         itemTotal.appendChild(itemTotalPrice);
@@ -260,7 +321,7 @@ function renderCartItems() {
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
             </svg>
         `;
-        removeBtn.title = 'Remove item';
+        removeBtn.title = 'Удалить товар';
         removeBtn.onclick = () => removeFromCart(product.id);
 
         // Assemble item
@@ -286,6 +347,9 @@ function updateQuantity(productId, newQuantity) {
     if (item) {
         item.quantity = newQuantity;
 
+        // Update product counter UI on card
+        updateCounterUI(productId, newQuantity);
+
         // Remove item if quantity is 0
         if (item.quantity === 0) {
             removeFromCart(productId);
@@ -303,6 +367,10 @@ function updateQuantity(productId, newQuantity) {
  */
 function removeFromCart(productId) {
     cart = cart.filter(item => item.id !== productId);
+
+    // Reset counter UI for removed product
+    updateCounterUI(productId, 0);
+
     renderCartItems();
     updateCartUI();
 }
@@ -363,12 +431,16 @@ function init() {
         const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
         // Show success message
-        alert(`Thank you for your purchase! Total: $${totalPrice.toFixed(2)}\n\nYour order has been placed and will be processed shortly.`);
+        alert(`Спасибо за покупку! Итого: ${formatPrice(totalPrice)}\n\nВаш заказ оформлен и будет обработан в ближайшее время.`);
 
         // Clear cart
         cart = [];
         renderCartItems();
         updateCartUI();
+
+        // Reset all counter UIs
+        products.forEach(p => updateCounterUI(p.id, 0));
+
         closeCart();
     });
 
