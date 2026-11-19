@@ -115,7 +115,7 @@ function renderProducts() {
         const minusBtn = document.createElement('button');
         minusBtn.className = 'w-8 h-8 flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
         minusBtn.innerHTML = '&minus;';
-        minusBtn.onclick = () => updateQuantity(product.id, product.quantity - 1);
+        minusBtn.onclick = () => updateQuantity(product.id, -1);
 
         const quantitySpan = document.createElement('span');
         quantitySpan.className = 'text-white font-semibold w-6 text-center text-lg';
@@ -124,7 +124,7 @@ function renderProducts() {
         const plusBtn = document.createElement('button');
         plusBtn.className = 'w-8 h-8 flex items-center justify-center bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors';
         plusBtn.innerHTML = '+';
-        plusBtn.onclick = () => updateQuantity(product.id, product.quantity + 1);
+        plusBtn.onclick = () => updateQuantity(product.id, 1);
 
         counterContainer.appendChild(minusBtn);
         counterContainer.appendChild(quantitySpan);
@@ -169,9 +169,13 @@ function addToCart(product) {
         });
     }
 
-    updateCounterUI(product.id, 1);
+    // Find the product in cart to get current quantity
+    const item = cart.find(i => i.id === product.id);
+    const currentQty = item ? item.quantity : 1;
+
+    updateCounterUI(product.id, currentQty);
     updateCartUI();
-    openCart();
+    // Корзина не открывается автоматически - ждем клика пользователя
 }
 
 /**
@@ -183,17 +187,19 @@ function updateCounterUI(productId, newQuantity) {
     const quantitySpan = counterContainer.querySelector('span');
     const minusBtn = counterContainer.querySelector('button:first-of-type');
 
-    if (newQuantity > 0) {
-        // Show counter, hide button
-        counterContainer.classList.remove('hidden');
-        addButton.classList.add('hidden');
-        quantitySpan.textContent = newQuantity;
-        minusBtn.disabled = newQuantity <= 1;
-    } else {
-        // Hide counter, show button
-        counterContainer.classList.add('hidden');
-        addButton.classList.remove('hidden');
-        quantitySpan.textContent = '0';
+    if (quantitySpan && counterContainer) {
+        if (newQuantity > 0) {
+            // Show counter, hide button
+            counterContainer.classList.remove('hidden');
+            addButton.classList.add('hidden');
+            quantitySpan.textContent = String(newQuantity);
+            minusBtn.disabled = newQuantity <= 1;
+        } else {
+            // Hide counter, show button
+            counterContainer.classList.add('hidden');
+            addButton.classList.remove('hidden');
+            quantitySpan.textContent = '0';
+        }
     }
 }
 
@@ -283,16 +289,16 @@ function renderCartItems() {
         minusBtn.className = 'text-gray-300 hover:text-white transition-colors disabled:opacity-50';
         minusBtn.disabled = product.quantity <= 1;
         minusBtn.innerHTML = '&minus;';
-        minusBtn.onclick = () => updateQuantity(product.id, product.quantity - 1);
+        minusBtn.onclick = () => updateQuantity(product.id, -1);
 
         const quantitySpan = document.createElement('span');
         quantitySpan.className = 'text-white font-semibold w-6 text-center';
-        quantitySpan.textContent = product.quantity;
+        quantitySpan.textContent = String(product.quantity);
 
         const plusBtn = document.createElement('button');
         plusBtn.className = 'text-gray-300 hover:text-white transition-colors';
         plusBtn.innerHTML = '+';
-        plusBtn.onclick = () => updateQuantity(product.id, product.quantity + 1);
+        plusBtn.onclick = () => updateQuantity(product.id, 1);
 
         quantityContainer.appendChild(minusBtn);
         quantityContainer.appendChild(quantitySpan);
@@ -338,23 +344,36 @@ function renderCartItems() {
 /**
  * Updates the quantity of a product in cart
  * @param {number} productId - ID of the product
- * @param {number} newQuantity - New quantity value
+ * @param {number} delta - Change in quantity (+1 or -1)
  */
-function updateQuantity(productId, newQuantity) {
+function updateQuantity(productId, delta) {
+    const item = cart.find(item => item.id === productId);
+
+    if (!item) {
+        // Товара нет в корзине - добавляем
+        const product = products.find(p => p.id === productId);
+        if (product) {
+            cart.push({ ...product, quantity: 1 });
+            updateCounterUI(productId, 1);
+            renderCartItems();
+            updateCartUI();
+        }
+        return;
+    }
+
+    const newQuantity = item.quantity + delta;
+
     if (newQuantity < 1) return;
 
-    const item = cart.find(item => item.id === productId);
-    if (item) {
-        item.quantity = newQuantity;
+    item.quantity = newQuantity;
 
-        // Update product counter UI on card
-        updateCounterUI(productId, newQuantity);
+    // Update product counter UI on card
+    updateCounterUI(productId, newQuantity);
 
-        // Remove item if quantity is 0
-        if (item.quantity === 0) {
-            removeFromCart(productId);
-            return;
-        }
+    // Remove item if quantity is 0
+    if (newQuantity === 0) {
+        removeFromCart(productId);
+        return;
     }
 
     renderCartItems();
