@@ -3,8 +3,9 @@
  * Pure Vanilla JavaScript implementation
  */
 
-// Product Data
+// Product Data - 12 товаров для двух страниц
 const products = [
+    // Страница 1
     {
         id: 1,
         title: "Беспроводные наушники",
@@ -40,14 +41,54 @@ const products = [
         title: "Премиальный рюкзак",
         price: 8999,
         image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&q=80"
+    },
+    // Страница 2
+    {
+        id: 7,
+        title: "Фитнес-браслет",
+        price: 5999,
+        image: "https://images.unsplash.com/photo-1523275335684-37898b6a5e53?w=400&q=80"
+    },
+    {
+        id: 8,
+        title: "Портативная колонка",
+        price: 7499,
+        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&q=80"
+    },
+    {
+        id: 9,
+        title: "Электросамокат",
+        price: 34999,
+        image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&q=80"
+    },
+    {
+        id: 10,
+        title: "VR-очки",
+        price: 29999,
+        image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&q=80"
+    },
+    {
+        id: 11,
+        title: "Фотоаппарат",
+        price: 59999,
+        image: "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400&q=80"
+    },
+    {
+        id: 12,
+        title: "Смартфон",
+        price: 49999,
+        image: "https://images.unsplash.com/photo-1523275335684-37898b6a5e53?w=400&q=80"
     }
 ];
 
 // State Management
 let cart = [];
+let currentPage = 1;
+const itemsPerPage = 6;
 
 // DOM Elements
 const productGrid = document.getElementById('product-grid');
+const paginationContainer = document.getElementById('pagination-container');
 const cartTrigger = document.getElementById('cart-trigger');
 const cartBadge = document.getElementById('cart-badge');
 const cartModal = document.getElementById('cart-modal');
@@ -58,6 +99,18 @@ const cartTotal = document.getElementById('cart-total');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const checkoutBtn = document.getElementById('checkout-btn');
 const closeCartBtn = document.getElementById('close-cart');
+// Map and Contacts buttons
+const mapToggleBtn = document.getElementById('map-toggle-btn');
+const contactsToggleBtn = document.getElementById('contacts-toggle-btn');
+const closeMapModal = document.getElementById('close-map-modal');
+const closeContactsModal = document.getElementById('close-contacts-modal');
+// Modal elements
+const mapModal = document.getElementById('map-modal');
+const mapModalBackdrop = document.getElementById('map-modal-backdrop');
+const mapModalPanel = document.getElementById('map-modal-panel');
+const contactsModal = document.getElementById('contacts-modal');
+const contactsModalBackdrop = document.getElementById('contacts-modal-backdrop');
+const contactsModalPanel = document.getElementById('contacts-modal-panel');
 
 /**
  * Форматирование цены в рубли
@@ -72,6 +125,72 @@ function formatPrice(rubles) {
 }
 
 /**
+ * Get current page products
+ */
+function getCurrentPageProducts() {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return products.slice(startIndex, endIndex);
+}
+
+/**
+ * Render pagination controls
+ */
+function renderPagination() {
+    const totalPages = Math.ceil(products.length / itemsPerPage);
+
+    paginationContainer.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    const pagination = document.createElement('div');
+    pagination.className = 'flex justify-center items-center gap-2 mt-8 mb-8';
+
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+    prevBtn.innerHTML = '&larr; Назад';
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderProducts();
+            renderPagination();
+        }
+    };
+
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `px-4 py-2 rounded-lg transition-colors ${currentPage === i ? 'bg-blue-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-white'}`;
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => {
+            currentPage = i;
+            renderProducts();
+            renderPagination();
+        };
+        pagination.appendChild(pageBtn);
+    }
+
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors';
+    nextBtn.innerHTML = 'Вперед &rarr;';
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            renderProducts();
+            renderPagination();
+        }
+    };
+
+    pagination.appendChild(prevBtn);
+    pagination.appendChild(nextBtn);
+    paginationContainer.appendChild(pagination);
+}
+
+/**
  * Renders the product catalog to the grid
  * Uses document.createElement() for clean DOM manipulation
  */
@@ -79,7 +198,9 @@ function renderProducts() {
     // Clear existing products
     productGrid.innerHTML = '';
 
-    products.forEach(product => {
+    const currentProducts = getCurrentPageProducts();
+
+    currentProducts.forEach(product => {
         // Create card container
         const card = document.createElement('div');
         card.className = 'bg-gray-800 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 group';
@@ -113,13 +234,25 @@ function renderProducts() {
         counterContainer.id = `counter-${product.id}`;
 
         const minusBtn = document.createElement('button');
-        minusBtn.className = 'w-8 h-8 flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+        minusBtn.className = 'w-8 h-8 flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors';
         minusBtn.innerHTML = '&minus;';
         minusBtn.onclick = () => updateQuantity(product.id, -1);
 
-        const quantitySpan = document.createElement('span');
-        quantitySpan.className = 'text-white font-semibold w-6 text-center text-lg';
-        quantitySpan.textContent = '0';
+        // Input for quantity (hidden by default, shown when counter is visible)
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.min = '1';
+        quantityInput.className = 'w-20 h-8 text-center bg-gray-600 text-white rounded-lg focus:outline-none border-none appearance-none';
+        quantityInput.value = '0';
+        quantityInput.id = `input-${product.id}`;
+
+        // Update on input change
+        quantityInput.addEventListener('change', (e) => {
+            let newQty = parseInt(e.target.value) || 0;
+            if (newQty < 1) newQty = 1;
+            e.target.value = newQty;
+            updateQuantityFromInput(product.id, newQty);
+        });
 
         const plusBtn = document.createElement('button');
         plusBtn.className = 'w-8 h-8 flex items-center justify-center bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors';
@@ -127,7 +260,7 @@ function renderProducts() {
         plusBtn.onclick = () => updateQuantity(product.id, 1);
 
         counterContainer.appendChild(minusBtn);
-        counterContainer.appendChild(quantitySpan);
+        counterContainer.appendChild(quantityInput);
         counterContainer.appendChild(plusBtn);
 
         // Add to cart button (initially visible)
@@ -151,6 +284,9 @@ function renderProducts() {
         card.appendChild(content);
         productGrid.appendChild(card);
     });
+
+    // Render pagination
+    renderPagination();
 }
 
 /**
@@ -174,6 +310,7 @@ function addToCart(product) {
     const currentQty = item ? item.quantity : 1;
 
     updateCounterUI(product.id, currentQty);
+    renderCartItems();
     updateCartUI();
     // Корзина не открывается автоматически - ждем клика пользователя
 }
@@ -184,23 +321,45 @@ function addToCart(product) {
 function updateCounterUI(productId, newQuantity) {
     const counterContainer = document.getElementById(`counter-${productId}`);
     const addButton = document.getElementById(`add-btn-${productId}`);
-    const quantitySpan = counterContainer.querySelector('span');
-    const minusBtn = counterContainer.querySelector('button:first-of-type');
+    const quantityInput = document.getElementById(`input-${productId}`);
 
-    if (quantitySpan && counterContainer) {
+    if (quantityInput && counterContainer) {
         if (newQuantity > 0) {
             // Show counter, hide button
             counterContainer.classList.remove('hidden');
             addButton.classList.add('hidden');
-            quantitySpan.textContent = String(newQuantity);
-            minusBtn.disabled = newQuantity <= 1;
+            quantityInput.value = String(newQuantity);
         } else {
             // Hide counter, show button
             counterContainer.classList.add('hidden');
             addButton.classList.remove('hidden');
-            quantitySpan.textContent = '0';
+            quantityInput.value = '0';
         }
     }
+}
+
+/**
+ * Update quantity from input change
+ */
+function updateQuantityFromInput(productId, newQuantity) {
+    const item = cart.find(item => item.id === productId);
+
+    if (!item) {
+        // Товара нет в корзине - добавляем
+        const product = products.find(p => p.id === productId);
+        if (product) {
+            cart.push({ ...product, quantity: newQuantity });
+            updateCounterUI(productId, newQuantity);
+            renderCartItems();
+            updateCartUI();
+        }
+        return;
+    }
+
+    item.quantity = newQuantity;
+    updateCounterUI(productId, newQuantity);
+    renderCartItems();
+    updateCartUI();
 }
 
 /**
@@ -281,27 +440,36 @@ function renderCartItems() {
         details.appendChild(name);
         details.appendChild(price);
 
-        // Quantity controls
+        // Quantity controls with input
         const quantityContainer = document.createElement('div');
-        quantityContainer.className = 'flex items-center gap-2 bg-gray-600 rounded-lg px-3 py-1';
+        quantityContainer.className = 'flex items-center gap-2 bg-gray-600 rounded-lg px-2 py-1';
 
         const minusBtn = document.createElement('button');
-        minusBtn.className = 'text-gray-300 hover:text-white transition-colors disabled:opacity-50';
-        minusBtn.disabled = product.quantity <= 1;
+        minusBtn.className = 'w-8 h-8 flex items-center justify-center bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors';
         minusBtn.innerHTML = '&minus;';
         minusBtn.onclick = () => updateQuantity(product.id, -1);
 
-        const quantitySpan = document.createElement('span');
-        quantitySpan.className = 'text-white font-semibold w-6 text-center';
-        quantitySpan.textContent = String(product.quantity);
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.min = '1';
+        quantityInput.className = 'w-20 h-8 text-center bg-gray-600 text-white rounded-lg focus:outline-none border-none appearance-none';
+        quantityInput.value = String(product.quantity);
+        quantityInput.dataset.productId = product.id;
+
+        quantityInput.addEventListener('change', (e) => {
+            let newQty = parseInt(e.target.value) || 0;
+            if (newQty < 1) newQty = 1;
+            e.target.value = newQty;
+            updateQuantityFromInput(product.id, newQty);
+        });
 
         const plusBtn = document.createElement('button');
-        plusBtn.className = 'text-gray-300 hover:text-white transition-colors';
+        plusBtn.className = 'w-8 h-8 flex items-center justify-center bg-green-600 hover:bg-green-500 text-white rounded-lg transition-colors';
         plusBtn.innerHTML = '+';
         plusBtn.onclick = () => updateQuantity(product.id, 1);
 
         quantityContainer.appendChild(minusBtn);
-        quantityContainer.appendChild(quantitySpan);
+        quantityContainer.appendChild(quantityInput);
         quantityContainer.appendChild(plusBtn);
 
         // Item total
@@ -355,7 +523,6 @@ function updateQuantity(productId, delta) {
         if (product) {
             cart.push({ ...product, quantity: 1 });
             updateCounterUI(productId, 1);
-            renderCartItems();
             updateCartUI();
         }
         return;
@@ -363,20 +530,20 @@ function updateQuantity(productId, delta) {
 
     const newQuantity = item.quantity + delta;
 
-    if (newQuantity < 1) return;
+    // Если количество станет меньше 1, удаляем товар из корзины
+    if (newQuantity < 1) {
+        removeFromCart(productId);
+        return;
+    }
 
     item.quantity = newQuantity;
 
     // Update product counter UI on card
     updateCounterUI(productId, newQuantity);
 
-    // Remove item if quantity is 0
-    if (newQuantity === 0) {
-        removeFromCart(productId);
-        return;
-    }
-
+    // Перерисовываем корзину чтобы обновить количество
     renderCartItems();
+
     updateCartUI();
 }
 
@@ -390,6 +557,7 @@ function removeFromCart(productId) {
     // Reset counter UI for removed product
     updateCounterUI(productId, 0);
 
+    // Перерисовываем корзину
     renderCartItems();
     updateCartUI();
 }
@@ -418,6 +586,10 @@ function closeCart() {
         cartModal.classList.add('hidden');
     }, 200);
 }
+
+// Toggle state for map and contacts modals
+let isMapOpen = false;
+let isContactsOpen = false;
 
 /**
  * Initializes the application
@@ -463,12 +635,94 @@ function init() {
         closeCart();
     });
 
+    // Map toggle button - opens/closes
+    mapToggleBtn.addEventListener('click', toggleMapModal);
+
+    // Contacts toggle button - opens/closes
+    contactsToggleBtn.addEventListener('click', toggleContactsModal);
+
+    // Close modal buttons
+    closeMapModal.addEventListener('click', closeMapModalOnly);
+    closeContactsModal.addEventListener('click', closeContactsModalOnly);
+
+    // Close on backdrop click for modals
+    mapModalBackdrop.addEventListener('click', closeMapModalOnly);
+    contactsModalBackdrop.addEventListener('click', closeContactsModalOnly);
+
     // Handle ESC key
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !cartModal.classList.contains('hidden')) {
+        if (e.key === 'Escape') {
             closeCart();
+            closeMapModalOnly();
+            closeContactsModalOnly();
         }
     });
+}
+
+// Map Modal Functions
+function toggleMapModal() {
+    if (isMapOpen) {
+        closeMapModalOnly();
+    } else {
+        closeContactsModalOnly(); // Close other modal if open
+        openMapModalOnly();
+    }
+}
+
+function openMapModalOnly() {
+    mapModal.classList.remove('hidden');
+    mapModalPanel.classList.remove('scale-95', 'opacity-0');
+    mapModalPanel.classList.add('scale-100', 'opacity-100');
+    mapModalBackdrop.classList.add('opacity-100');
+    isMapOpen = true;
+}
+
+function closeMapModalOnly() {
+    mapModalBackdrop.classList.remove('opacity-100');
+    mapModalPanel.classList.remove('scale-100', 'opacity-100');
+    mapModalPanel.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        mapModal.classList.add('hidden');
+    }, 200);
+    isMapOpen = false;
+}
+
+// Contacts Modal Functions
+function toggleContactsModal() {
+    if (isContactsOpen) {
+        closeContactsModalOnly();
+    } else {
+        closeMapModalOnly(); // Close other modal if open
+        openContactsModalOnly();
+    }
+}
+
+function openContactsModalOnly() {
+    contactsModal.classList.remove('hidden');
+    contactsModalPanel.classList.remove('scale-95', 'opacity-0');
+    contactsModalPanel.classList.add('scale-100', 'opacity-100');
+    contactsModalBackdrop.classList.add('opacity-100');
+    isContactsOpen = true;
+}
+
+function closeContactsModalOnly() {
+    contactsModalBackdrop.classList.remove('opacity-100');
+    contactsModalPanel.classList.remove('scale-100', 'opacity-100');
+    contactsModalPanel.classList.add('scale-95', 'opacity-0');
+    setTimeout(() => {
+        contactsModal.classList.add('hidden');
+    }, 200);
+    isContactsOpen = false;
+}
+
+function showMapSection() {
+    mapSection.classList.remove('hidden');
+    mapSection.classList.add('fade-in');
+}
+
+function hideMapSection() {
+    mapSection.classList.add('hidden');
+    mapSection.classList.remove('fade-in');
 }
 
 // Initialize when DOM is ready
