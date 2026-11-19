@@ -82,12 +82,17 @@ function createProductCard(product) {
 }
 
 function renderProducts() {
-    if (!productGrid) return;
+    console.log('renderProducts called');
+    if (!productGrid) {
+        console.error('productGrid not found');
+        return;
+    }
 
     productGrid.innerHTML = '';
 
     if (products.length === 0) {
-        document.getElementById('emptyState').classList.remove('hidden');
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) emptyState.classList.remove('hidden');
         return;
     }
 
@@ -95,6 +100,7 @@ function renderProducts() {
         const card = createProductCard(product);
         productGrid.appendChild(card);
     });
+    console.log('renderProducts done, products:', products.length);
 }
 
 // Создание HTML для товара в корзине
@@ -133,9 +139,9 @@ function renderCartItems() {
             '<i class="fa-solid fa-cart-shopping text-4xl mb-4 opacity-30"></i>' +
             '<p>Корзина пуста</p>' +
         '</div>';
-        cartSummary.classList.add('hidden');
-        checkoutButton.classList.add('hidden');
-        emptyCartButton.classList.add('hidden');
+        if (cartSummary) cartSummary.classList.add('hidden');
+        if (checkoutButton) checkoutButton.classList.add('hidden');
+        if (emptyCartButton) emptyCartButton.classList.add('hidden');
         if (cartCountFloating) cartCountFloating.classList.add('opacity-0');
         return;
     }
@@ -145,9 +151,9 @@ function renderCartItems() {
         cartItemsList.innerHTML += createCartItemHTML(item);
     });
 
-    cartSummary.classList.remove('hidden');
-    checkoutButton.classList.remove('hidden');
-    emptyCartButton.classList.remove('hidden');
+    if (cartSummary) cartSummary.classList.remove('hidden');
+    if (checkoutButton) checkoutButton.classList.remove('hidden');
+    if (emptyCartButton) emptyCartButton.classList.remove('hidden');
     if (cartCountFloating) cartCountFloating.classList.remove('opacity-0');
 }
 
@@ -179,6 +185,7 @@ function updateCartUI() {
 }
 
 function openCartModal() {
+    console.log('openCartModal called');
     if (!cartModalOverlay || !cartModal) return;
     renderCartItems();
     updateCartUI();
@@ -188,6 +195,7 @@ function openCartModal() {
 }
 
 function closeCartModal() {
+    console.log('closeCartModal called');
     if (!cartModalOverlay || !cartModal) return;
     cartModalOverlay.classList.add('opacity-0', 'pointer-events-none');
     cartModal.classList.add('translate-y-full');
@@ -195,6 +203,7 @@ function closeCartModal() {
 }
 
 function addToCart(productId) {
+    console.log('addToCart called with id:', productId);
     const product = products.find(function(p) { return p.id === productId; });
     if (!product) return;
 
@@ -208,6 +217,7 @@ function addToCart(productId) {
     }
 
     updateCartUI();
+    renderCartItems();
     saveCart();
 }
 
@@ -285,16 +295,6 @@ function loadCart() {
     } catch (e) { console.error('Load error:', e); }
 }
 
-function testRender() {
-    console.log('testRender called');
-    if (!productGrid) {
-        console.error('productGrid not found');
-        return;
-    }
-    renderProducts();
-    showToast('Товары перерисованы', 'success');
-}
-
 function init() {
     console.log('INIT start');
 
@@ -320,8 +320,7 @@ function init() {
     console.log('DOM loaded:', {
         productGrid: !!productGrid,
         cartButton: !!cartButton,
-        cartFloatingButton: !!cartFloatingButton,
-        cartModalOverlay: !!cartModalOverlay
+        cartFloatingButton: !!cartFloatingButton
     });
 
     if (!productGrid) { console.error('productGrid NOT FOUND'); return; }
@@ -359,12 +358,6 @@ function init() {
         cartModalOverlay.addEventListener('click', function(e) {
             if (e.target === cartModalOverlay) closeCartModal();
         });
-    }
-
-    // Обработчик кнопки теста
-    const testRenderBtn = document.getElementById('testRender');
-    if (testRenderBtn) {
-        testRenderBtn.addEventListener('click', function() { testRender(); });
     }
 
     // Закрытие модального окна по нажатию ESC
