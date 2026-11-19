@@ -56,16 +56,16 @@ const products = [
 let cart = [];
 
 // Элементы DOM
-const productGrid = document.getElementById('productGrid');
-const cartPanel = document.getElementById('cartPanel');
-const cartButton = document.getElementById('cartButton');
-const cartCount = document.getElementById('cartCount');
-const cartCountPanel = document.getElementById('cartCountPanel');
-const totalPrice = document.getElementById('totalPrice');
-const checkoutButton = document.getElementById('checkoutButton');
-const checkoutAmount = document.getElementById('checkoutAmount');
-const emptyCartButton = document.getElementById('emptyCartButton');
-const toastContainer = document.getElementById('toastContainer');
+let productGrid = null;
+let cartPanel = null;
+let cartButton = null;
+let cartCount = null;
+let cartCountPanel = null;
+let totalPrice = null;
+let checkoutButton = null;
+let checkoutAmount = null;
+let emptyCartButton = null;
+let toastContainer = null;
 
 // Инициализация VK Bridge
 function initVKBridge() {
@@ -73,14 +73,10 @@ function initVKBridge() {
         vkBridge.send('VKWebAppInit');
         console.log('VK Bridge initialized');
 
-        // Проверка расширения приложения
         vkBridge.send('VKWebAppResizeWindow', { height: document.body.scrollHeight });
-
-        // Получение параметров авторизации (если нужно)
         vkBridge.send('VKWebAppGetUserInfo');
     } else {
         console.warn('VK Bridge not loaded yet');
-        // Задержанная попытка инициализации
         setTimeout(initVKBridge, 500);
     }
 }
@@ -94,49 +90,48 @@ function showToast(message, type = 'success') {
     if (type === 'error') icon = '<i class="fa-solid fa-circle-xmark"></i>';
     if (type === 'info') icon = '<i class="fa-solid fa-info-circle"></i>';
 
-    toast.innerHTML = `
-        ${icon}
-        <span class="flex-1">${message}</span>
-    `;
+    toast.innerHTML = `${icon}<span class="flex-1">${message}</span>`;
 
     toastContainer.appendChild(toast);
 
-    // Анимация показа
     setTimeout(() => {
         toast.style.animation = 'toastOut 0.3s ease forwards';
     }, 2500);
 
-    // Удаление элемента
     setTimeout(() => {
         toast.remove();
     }, 3000);
 }
 
-// Создание карточки товара (возвращает HTML-строку для чистой вставки)
+// Создание карточки товара (возвращает готовый DOM-элемент)
 function createProductCard(product) {
+    const card = document.createElement('div');
+    card.className = 'product-card';
+    card.setAttribute('data-id', product.id);
+
     const badgeHtml = product.badge ?
         `<div class="product-badge" style="background: ${getBadgeColor(product.badge)}">${product.badge}</div>` : '';
 
-    return `
-        <div class="product-card" data-id="${product.id}">
-            <div class="product-image-container">
-                <img src="${product.image}" alt="${product.name}" class="product-image" loading="lazy">
-                ${badgeHtml}
-            </div>
-            <div class="product-info">
-                <h3 class="product-title">${product.name}</h3>
-                <p class="product-description">${product.description}</p>
-                <div class="product-footer">
-                    <div class="product-price">${product.price.toLocaleString('ru-RU')} ₽</div>
-                    <div class="product-actions">
-                        <button class="btn-add" data-id="${product.id}">
-                            <i class="fa-solid fa-plus"></i> В корзину
-                        </button>
-                    </div>
+    card.innerHTML = `
+        <div class="product-image-container">
+            <img src="${product.image}" alt="${product.name}" class="product-image" loading="lazy">
+            ${badgeHtml}
+        </div>
+        <div class="product-info">
+            <h3 class="product-title">${product.name}</h3>
+            <p class="product-description">${product.description}</p>
+            <div class="product-footer">
+                <div class="product-price">${product.price.toLocaleString('ru-RU')} ₽</div>
+                <div class="product-actions">
+                    <button class="btn-add" data-id="${product.id}">
+                        <i class="fa-solid fa-plus"></i> В корзину
+                    </button>
                 </div>
             </div>
         </div>
     `;
+
+    return card;
 }
 
 // Цвета для бейджей
@@ -150,23 +145,40 @@ function getBadgeColor(badge) {
     return colors[badge] || '#3B82F6';
 }
 
-// Отображение каталога
+// Отображение каталога (использует appendChild для DOM-элементов)
 function renderProducts() {
-    if (products.length === 0) {
-        document.getElementById('emptyState').classList.remove('hidden');
+    if (!productGrid) {
+        console.error('productGrid не найден');
         return;
     }
 
-    // Используем innerHTML для вставки всех карточек сразу
-    productGrid.innerHTML = products.map(product => createProductCard(product)).join('');
+    // Очищаем контейнер
+    productGrid.innerHTML = '';
 
-    // Привязываем обработчики событий к кнопкам
-    productGrid.querySelectorAll('.btn-add').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const productId = parseInt(btn.getAttribute('data-id'));
-            addToCart(productId);
+    if (products.length === 0) {
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) {
+            emptyState.classList.remove('hidden');
+        }
+        return;
+    }
+
+    // Создаём и добавляем карточки через appendChild
+    products.forEach(product => {
+        const card = createProductCard(product);
+
+        // Добавляем обработчик клика на карточку (для кнопок внутри)
+        card.addEventListener('click', (e) => {
+            // Ищем кнопку "В корзину" в кликнутом элементе
+            const btn = e.target.closest('.btn-add');
+            if (btn) {
+                e.preventDefault();
+                const productId = parseInt(btn.getAttribute('data-id'));
+                addToCart(productId);
+            }
         });
+
+        productGrid.appendChild(card);
     });
 }
 
@@ -215,32 +227,35 @@ function updateCartUI() {
     const totalPriceValue = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     // Обновление счетчика
-    cartCount.textContent = totalCount;
-    cartCountPanel.textContent = totalCount;
+    if (cartCount) cartCount.textContent = totalCount;
+    if (cartCountPanel) cartCountPanel.textContent = totalCount;
 
     if (totalCount > 0) {
-        cartCount.classList.remove('opacity-0');
-        cartPanel.classList.remove('translate-y-full');
-        cartPanel.classList.add('translate-y-0');
+        if (cartCount) cartCount.classList.remove('opacity-0');
+        if (cartPanel) {
+            cartPanel.classList.remove('translate-y-full');
+            cartPanel.classList.add('translate-y-0');
+        }
 
-        // Показать кнопку оформления
-        checkoutButton.classList.remove('hidden');
-        checkoutAmount.textContent = totalPriceValue.toLocaleString('ru-RU');
+        if (checkoutButton) {
+            checkoutButton.classList.remove('hidden');
+            if (checkoutAmount) checkoutAmount.textContent = totalPriceValue.toLocaleString('ru-RU');
+        }
 
-        // Показать кнопку очистки
-        emptyCartButton.classList.remove('hidden');
+        if (emptyCartButton) emptyCartButton.classList.remove('hidden');
     } else {
-        cartCount.classList.add('opacity-0');
-        cartPanel.classList.remove('translate-y-0');
-        cartPanel.classList.add('translate-y-full');
+        if (cartCount) cartCount.classList.add('opacity-0');
+        if (cartPanel) {
+            cartPanel.classList.remove('translate-y-0');
+            cartPanel.classList.add('translate-y-full');
+        }
 
-        // Скрыть кнопки
-        checkoutButton.classList.add('hidden');
-        emptyCartButton.classList.add('hidden');
+        if (checkoutButton) checkoutButton.classList.add('hidden');
+        if (emptyCartButton) emptyCartButton.classList.add('hidden');
     }
 
     // Обновление общей суммы
-    totalPrice.textContent = totalPriceValue.toLocaleString('ru-RU');
+    if (totalPrice) totalPrice.textContent = totalPriceValue.toLocaleString('ru-RU');
 
     // Обновление кнопок в карточках
     document.querySelectorAll('.btn-add').forEach(btn => {
@@ -265,7 +280,6 @@ function checkout() {
 
     const orderTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    // Формирование сообщения заказа
     const orderItems = cart.map(item =>
         `• ${item.name} x${item.quantity} - ${item.price.toLocaleString('ru-RU')} ₽`
     ).join('\n');
@@ -276,9 +290,7 @@ function checkout() {
         `Заказ:\n${orderItems}\n\n` +
         `⭐ Спасибо за заказ!`;
 
-    // Отправка через VK Bridge
     if (window.vkBridge) {
-        // Попытка использовать VKWebAppShowWallPostBox
         vkBridge.send('VKWebAppShowWallPostBox', {
             message: orderMessage,
             attachments: 'photo208472431_456239032'
@@ -287,8 +299,6 @@ function checkout() {
                 showToast('Заказ успешно отправлен!', 'success');
                 cart = [];
                 updateCartUI();
-
-                // Сохранение в хранилище
                 vkBridge.send('VKWebAppStorageSet', { key: 'cart', value: JSON.stringify([]) });
             } else {
                 handleFallbackOrder(orderMessage);
@@ -301,11 +311,9 @@ function checkout() {
 
 // Альтернативный способ оформления заказа
 function handleFallbackOrder(message) {
-    // Проверка, запущено ли в VK
     const vkParams = getVKParams();
 
     if (vkParams && vkParams.viewer_id) {
-        // В VK - показываем диалог
         showToast('Отправка заказа...', 'info');
 
         setTimeout(() => {
@@ -314,7 +322,6 @@ function handleFallbackOrder(message) {
             updateCartUI();
         }, 1500);
     } else {
-        // В браузере - показываем консоль
         console.log('--- ЗАКАЗ ---');
         console.log(message);
         console.log('-------------');
@@ -371,6 +378,23 @@ function loadCart() {
 
 // Инициализация при загрузке
 function init() {
+    // Получаем элементы DOM
+    productGrid = document.getElementById('productGrid');
+    cartPanel = document.getElementById('cartPanel');
+    cartButton = document.getElementById('cartButton');
+    cartCount = document.getElementById('cartCount');
+    cartCountPanel = document.getElementById('cartCountPanel');
+    totalPrice = document.getElementById('totalPrice');
+    checkoutButton = document.getElementById('checkoutButton');
+    checkoutAmount = document.getElementById('checkoutAmount');
+    emptyCartButton = document.getElementById('emptyCartButton');
+    toastContainer = document.getElementById('toastContainer');
+
+    if (!productGrid) {
+        console.error('Элемент #productGrid не найден!');
+        return;
+    }
+
     // Загрузка корзины из хранилища
     loadCart();
 
@@ -381,14 +405,21 @@ function init() {
     initVKBridge();
 
     // Обработчики событий для корзины
-    cartButton.addEventListener('click', () => {
-        if (cart.length > 0) {
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        }
-    });
+    if (cartButton) {
+        cartButton.addEventListener('click', () => {
+            if (cart.length > 0) {
+                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+            }
+        });
+    }
 
-    checkoutButton.addEventListener('click', checkout);
-    emptyCartButton.addEventListener('click', clearCart);
+    if (checkoutButton) {
+        checkoutButton.addEventListener('click', checkout);
+    }
+
+    if (emptyCartButton) {
+        emptyCartButton.addEventListener('click', clearCart);
+    }
 
     // Обработка ресайза окна
     if (window.vkBridge) {
